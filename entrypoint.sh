@@ -18,12 +18,15 @@ function download_package {
             python -m rasa_nlu.download -p mitie
             ;;
         spacy)
+            pip install spacy
+            pip install scikit-learn==0.18.1 scipy==0.19.0
             case $2 in 
                 en|de)
                     echo "Downloading spacy.$2 model..."
-                    python -m spacy."$2".download all
+                    python -m spacy download "$2"
                     echo "Done."
                     ;;
+                    
                 *) 
                     echo "Error. Rasa_nlu supports only english and german models for the time being"
                     print_help
