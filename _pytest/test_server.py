@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+
+import os
 import tempfile
 
 import pytest
@@ -27,7 +29,6 @@ def app(tmpdir_factory):
         "path": tmpdir_factory.mktemp("models").strpath,
         "server_model_dirs": {},
         "data": "./data/demo-restaurants.json",
-        "luis_data_tokenizer": "tokenizer_mitie",
         "emulate": "wit",
     }
     config = RasaNLUConfig(cmdline_args=_config)
@@ -44,7 +45,7 @@ def rasa_default_train_data():
 
 def test_root(client):
     response = client.get("/")
-    assert response.status_code == 200 and response.data == b"hello"
+    assert response.status_code == 200 and response.data.startswith(b"hello")
 
 
 def test_status(client):
@@ -52,6 +53,18 @@ def test_status(client):
     rjs = response.json
     assert response.status_code == 200 and \
         ("trainings_under_this_process" in rjs and "available_models" in rjs)
+
+
+def test_config(client):
+    response = client.get("/config")
+    assert response.status_code == 200
+
+
+def test_version(client):
+    response = client.get("/version")
+    rjs = response.json
+    assert response.status_code == 200 and \
+        ("version" in rjs)
 
 
 @pytest.mark.parametrize("response_test", [
@@ -99,6 +112,8 @@ def test_post_parse(client, response_test):
 def test_post_train(client, rasa_default_train_data):
     response = client.post("/train", data=json.dumps(rasa_default_train_data), content_type='application/json')
     assert response.status_code == 200
+    assert len(response.json["training_process_ids"]) == 1
+    assert response.json["info"] == "training started."
 
 
 def test_model_hot_reloading(client, rasa_default_train_data):
@@ -112,3 +127,11 @@ def test_model_hot_reloading(client, rasa_default_train_data):
     time.sleep(3)    # training should be quick as the keyword model doesn't do any training
     response = client.get(query)
     assert response.status_code == 200, "Model should now exist after it got trained"
+
+
+def test_wsgi():
+    # this avoids the loading of any models when starting the server --> faster
+    os.environ["RASA_path"] = "some_none/existent/path"
+    from rasa_nlu.wsgi import application
+    assert application is not None
+    del os.environ["RASA_path"]

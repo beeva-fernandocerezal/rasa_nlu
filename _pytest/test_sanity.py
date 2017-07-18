@@ -32,7 +32,7 @@ def import_submodules(package_name, skip_list):
     return results
 
 
-@pytest.mark.parametrize("banned_package", ["spacy", "mitie", "numpy", "sklearn", "duckling"])
+@pytest.mark.parametrize("banned_package", ["spacy", "mitie", "sklearn", "duckling"])
 def test_no_global_imports_of_banned_package(banned_package):
     """This test ensures that neither of the banned packages are imported module wise in any of our code files.
 
@@ -66,7 +66,7 @@ def test_no_global_imports_of_banned_package(banned_package):
     import_submodules("rasa_nlu", skip_list={"rasa_nlu.wsgi"})      # wsgi needs to be skipped as it instantiates an app
 
     def find_modules_importing(name):
-        return [v for k, vs in tracked_imports.items() if k.startswith(name) for v in vs]
+        return {v for k, vs in tracked_imports.items() if k.startswith(name) for v in vs}
 
     assert not find_modules_importing(banned_package), \
         "No module should import {} globally. Found in {}".format(
