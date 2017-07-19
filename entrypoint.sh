@@ -18,8 +18,7 @@ function download_package {
             python -m rasa_nlu.download -p mitie
             ;;
         spacy)
-            pip install spacy
-            pip install scikit-learn==0.18.1 scipy==0.19.0
+            pip install -r requirements-spacy.txt
             case $2 in 
                 en|de)
                     echo "Downloading spacy.$2 model..."
